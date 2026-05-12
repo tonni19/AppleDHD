@@ -196,16 +196,21 @@ function Dashboard() {
       { id: 'study', name: 'Study Tracker', type: 'hours' }
     ];
   });
+  
+  const [isAdding, setIsAdding] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newType, setNewType] = useState<'days'|'hours'>('days');
 
   useEffect(() => {
     localStorage.setItem('AppleDHD_trackersConfig', JSON.stringify(trackers));
   }, [trackers]);
 
   const addTracker = () => {
-    const type = window.confirm('Should this tracker include Hours? (OK = Yes/Hours, Cancel = No/Days Only)') ? 'hours' : 'days';
-    const name = prompt('What do you want to call this tracker?');
-    if (name) {
-      setTrackers([...trackers, { id: Date.now().toString(), name, type }]);
+    if (newName.trim()) {
+      setTrackers([...trackers, { id: Date.now().toString(), name: newName.trim(), type: newType }]);
+      setIsAdding(false);
+      setNewName('');
+      setNewType('days');
     }
   };
 
@@ -231,9 +236,35 @@ function Dashboard() {
         </div>
       ))}
       <div style={{ textAlign: 'center', marginTop: '30px' }}>
-        <button className="btn-secondary" onClick={addTracker} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-          <Plus size={16} /> Add New Tracker
-        </button>
+        {isAdding ? (
+          <div style={{ background: 'var(--bg-color)', padding: '15px', borderRadius: '12px', border: '2px solid var(--border-color)', margin: '0 auto', maxWidth: '300px' }}>
+             <h3 style={{ marginTop: 0, marginBottom: '15px', fontFamily: 'var(--font-sketch)', color: 'var(--accent-color)' }}>New Tracker</h3>
+             <input 
+               type="text" 
+               placeholder="Tracker Name (e.g. Gym)" 
+               value={newName} 
+               onChange={e => setNewName(e.target.value)}
+               style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', background: 'transparent' }}
+               autoFocus
+             />
+             <select 
+               value={newType} 
+               onChange={e => setNewType(e.target.value as 'days'|'hours')}
+               style={{ width: '100%', marginBottom: '15px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', cursor: 'pointer', background: 'transparent' }}
+             >
+               <option value="days">Track Days Only</option>
+               <option value="hours">Track Days & Hours</option>
+             </select>
+             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+               <button className="btn-secondary" onClick={() => setIsAdding(false)}>Cancel</button>
+               <button className="work-btn" style={{ padding: '8px 16px', fontSize: '14px' }} onClick={addTracker}>Add</button>
+             </div>
+          </div>
+        ) : (
+          <button className="btn-secondary" onClick={() => setIsAdding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+            <Plus size={16} /> Add New Tracker
+          </button>
+        )}
       </div>
     </section>
   );
