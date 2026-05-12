@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Calendar as CalendarIcon, Bot, Send, Plus } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Bot, Send, Plus, Battery, BatteryCharging, Wifi, Signal } from 'lucide-react';
 import './index.css';
 
 // --- Types ---
@@ -17,6 +17,51 @@ function getDaysInCurrentMonth() {
 }
 
 // --- Components ---
+
+function StatusBar() {
+  const [time, setTime] = useState('');
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+  const [isCharging, setIsCharging] = useState(false);
+
+  useEffect(() => {
+    // Clock update
+    const updateTime = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+
+    // Battery update (Warning: iOS Safari restricts this API, but works beautifully on other platforms)
+    if ('getBattery' in navigator) {
+      (navigator as any).getBattery().then((battery: any) => {
+        const updateBattery = () => {
+          setBatteryLevel(Math.round(battery.level * 100));
+          setIsCharging(battery.charging);
+        };
+        updateBattery();
+        battery.addEventListener('levelchange', updateBattery);
+        battery.addEventListener('chargingchange', updateBattery);
+      });
+    }
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="status-bar">
+      <div className="status-time">{time}</div>
+      <div className="status-icons">
+        <Signal size={16} />
+        <Wifi size={16} />
+        <div className="battery-container">
+          {batteryLevel !== null && <span style={{ marginRight: '4px' }}>{batteryLevel}%</span>}
+          {isCharging ? <BatteryCharging size={18} /> : <Battery size={18} />}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function JobTracker() {
   const [jobData, setJobData] = useState<JobData>(() => {
@@ -356,6 +401,7 @@ export default function App() {
 
   return (
     <div className="app-container">
+      <StatusBar />
       <header>
         <h1>AppleDHD</h1>
       </header>
