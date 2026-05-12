@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, Calendar as CalendarIcon, Bot, Send, Plus } from 'lucide-react';
 import './index.css';
 
