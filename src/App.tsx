@@ -269,7 +269,7 @@ function Dashboard() {
              </select>
              <input 
                type="number" 
-               placeholder="Target Days/Month (e.g. 15)" 
+               placeholder="Target Days (Optional)" 
                value={newTargetDays} 
                onChange={e => setNewTargetDays(e.target.value)}
                style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', background: 'transparent' }}
@@ -277,7 +277,7 @@ function Dashboard() {
              {newType === 'hours' && (
                <input 
                  type="number" 
-                 placeholder="Target Hours/Month (e.g. 40)" 
+                 placeholder="Target Hours (Optional)" 
                  value={newTargetHours} 
                  onChange={e => setNewTargetHours(e.target.value)}
                  style={{ width: '100%', marginBottom: '15px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', background: 'transparent' }}
