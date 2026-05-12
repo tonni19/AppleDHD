@@ -3,8 +3,6 @@ import { LayoutDashboard, Calendar as CalendarIcon, Bot, Send, Plus, Battery, Ba
 import './index.css';
 
 // --- Types ---
-interface JobData { daysWorked: number; lastWorkedDate: string | null; currentMonth: number; }
-interface StudyData { daysStudied: number; hoursStudied: number; lastStudiedDate: string | null; lastHoursAdded: number; currentMonth: number; }
 interface CalendarEvent { id: string; title: string; type: string; date: string; }
 interface ChatMessage { text: string; sender: 'user' | 'ai'; }
 
