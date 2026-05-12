@@ -403,6 +403,7 @@ export default function App() {
     <div className="app-container">
       <StatusBar />
       <header>
+        <img src="/rotten_to_the_core.jpg" alt="Logo" className="app-logo" />
         <h1>AppleDHD</h1>
       </header>
 
