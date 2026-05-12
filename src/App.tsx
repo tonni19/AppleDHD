@@ -20,7 +20,7 @@ function getDaysInCurrentMonth() {
 
 function JobTracker() {
   const [jobData, setJobData] = useState<JobData>(() => {
-    const saved = localStorage.getItem('ApplDHD_jobData');
+    const saved = localStorage.getItem('AppleDHD_jobData');
     if (saved) return JSON.parse(saved);
     return { daysWorked: 0, lastWorkedDate: null, currentMonth: new Date().getMonth() };
   });
@@ -30,12 +30,12 @@ function JobTracker() {
     if (jobData.currentMonth !== currentMonth) {
       const resetData = { daysWorked: 0, lastWorkedDate: null, currentMonth };
       setJobData(resetData);
-      localStorage.setItem('ApplDHD_jobData', JSON.stringify(resetData));
+      localStorage.setItem('AppleDHD_jobData', JSON.stringify(resetData));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('ApplDHD_jobData', JSON.stringify(jobData));
+    localStorage.setItem('AppleDHD_jobData', JSON.stringify(jobData));
   }, [jobData]);
 
   const today = new Date().toISOString().split('T')[0];
@@ -87,7 +87,7 @@ function JobTracker() {
 
 function StudyTracker() {
   const [studyData, setStudyData] = useState<StudyData>(() => {
-    const saved = localStorage.getItem('ApplDHD_studyData');
+    const saved = localStorage.getItem('AppleDHD_studyData');
     if (saved) return JSON.parse(saved);
     return { daysStudied: 0, hoursStudied: 0, lastStudiedDate: null, lastHoursAdded: 0, currentMonth: new Date().getMonth() };
   });
@@ -98,12 +98,12 @@ function StudyTracker() {
     if (studyData.currentMonth !== currentMonth) {
       const resetData = { daysStudied: 0, hoursStudied: 0, lastStudiedDate: null, lastHoursAdded: 0, currentMonth };
       setStudyData(resetData);
-      localStorage.setItem('ApplDHD_studyData', JSON.stringify(resetData));
+      localStorage.setItem('AppleDHD_studyData', JSON.stringify(resetData));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('ApplDHD_studyData', JSON.stringify(studyData));
+    localStorage.setItem('AppleDHD_studyData', JSON.stringify(studyData));
   }, [studyData]);
 
   const today = new Date().toISOString().split('T')[0];
@@ -175,7 +175,7 @@ function Dashboard() {
 
 function Calendar() {
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
-    const saved = localStorage.getItem('ApplDHD_events');
+    const saved = localStorage.getItem('AppleDHD_events');
     return saved ? JSON.parse(saved) : [];
   });
   const [modalOpen, setModalOpen] = useState(false);
@@ -184,7 +184,7 @@ function Calendar() {
   const [newDate, setNewDate] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('ApplDHD_events', JSON.stringify(events));
+    localStorage.setItem('AppleDHD_events', JSON.stringify(events));
   }, [events]);
 
   const saveEvent = () => {
@@ -302,15 +302,15 @@ function AiAssistant() {
     const text = q.toLowerCase();
     setTimeout(() => {
       if (text.includes('how many hours') || text.includes('studied') || text.includes('study')) {
-        const data = JSON.parse(localStorage.getItem('ApplDHD_studyData') || '{}');
+        const data = JSON.parse(localStorage.getItem('AppleDHD_studyData') || '{}');
         setHistory(prev => [...prev, { text: `You've studied ${data.hoursStudied || 0} hours this month. The target is ${TARGET_STUDY_HOURS}. Keep it up!`, sender: 'ai' }]);
       } 
       else if (text.includes('how many days') || text.includes('worked') || text.includes('tracker')) {
-        const data = JSON.parse(localStorage.getItem('ApplDHD_jobData') || '{}');
+        const data = JSON.parse(localStorage.getItem('AppleDHD_jobData') || '{}');
         setHistory(prev => [...prev, { text: `You've worked ${data.daysWorked || 0} days this month. The target is ${TARGET_JOB_DAYS}. You got this!`, sender: 'ai' }]);
       } 
       else if (text.includes('next test') || text.includes('exam')) {
-        const evs = JSON.parse(localStorage.getItem('ApplDHD_events') || '[]') as CalendarEvent[];
+        const evs = JSON.parse(localStorage.getItem('AppleDHD_events') || '[]') as CalendarEvent[];
         const today = new Date(); today.setHours(0,0,0,0);
         const tests = evs.filter(e => e.type === 'Class Test' && new Date(e.date) >= today).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         if (tests.length > 0) {
@@ -343,7 +343,7 @@ function AiAssistant() {
           <div ref={chatEndRef} />
         </div>
         <div className="chat-input-area">
-          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask ApplDHD..." />
+          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Ask AppleDHD..." />
           <button onClick={handleSend}><Send size={20} /></button>
         </div>
       </div>
@@ -357,7 +357,7 @@ export default function App() {
   return (
     <div className="app-container">
       <header>
-        <h1>ApplDHD</h1>
+        <h1>AppleDHD</h1>
       </header>
 
       <main id="main-content">
