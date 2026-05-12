@@ -8,14 +8,14 @@
   "description": "A No-Noise Calendar and Tracker app for ADHD.",
   "icons": [
     {
-      "src": "favicon.svg",
+      "src": "rotten_to_the_core.jpg",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/jpeg"
     },
     {
-      "src": "favicon.svg",
+      "src": "rotten_to_the_core.jpg",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/jpeg"
     }
   ]
 }
