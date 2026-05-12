@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Calendar as CalendarIcon, Bot, Send, Plus, Battery, BatteryCharging, Wifi, Signal } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Bot, Send, Plus, Battery, BatteryCharging, Wifi, Signal, Edit2, Trash2, Save, X } from 'lucide-react';
 import './index.css';
 
 // --- Types ---
@@ -63,146 +63,126 @@ function StatusBar() {
   );
 }
 
-function JobTracker() {
-  const [jobData, setJobData] = useState<JobData>(() => {
-    const saved = localStorage.getItem('AppleDHD_jobData');
-    if (saved) return JSON.parse(saved);
-    return { daysWorked: 0, lastWorkedDate: null, currentMonth: new Date().getMonth() };
-  });
-
-  useEffect(() => {
-    const currentMonth = new Date().getMonth();
-    if (jobData.currentMonth !== currentMonth) {
-      const resetData = { daysWorked: 0, lastWorkedDate: null, currentMonth };
-      setJobData(resetData);
-      localStorage.setItem('AppleDHD_jobData', JSON.stringify(resetData));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('AppleDHD_jobData', JSON.stringify(jobData));
-  }, [jobData]);
-
-  const today = new Date().toISOString().split('T')[0];
-  const isDoneToday = jobData.lastWorkedDate === today;
-  const percentage = Math.min((jobData.daysWorked / TARGET_JOB_DAYS) * 100, 100);
-
-  const toggleWork = () => {
-    setJobData(prev => {
-      if (prev.lastWorkedDate !== today) {
-        return { ...prev, daysWorked: prev.daysWorked + 1, lastWorkedDate: today };
-      } else {
-        return { ...prev, daysWorked: Math.max(0, prev.daysWorked - 1), lastWorkedDate: null };
-      }
-    });
-  };
-
-  let petQuote = `"Ready to crush it today?"`;
-  if (jobData.daysWorked === 0) petQuote = `"Let's get started on those 16 days!"`;
-  else if (jobData.daysWorked >= TARGET_JOB_DAYS) petQuote = `"Goal reached! You're amazing. Go rest!"`;
-  else if (isDoneToday) petQuote = `"Good job today. Be proud of yourself."`;
-
-  return (
-    <>
-      <div className="pet-widget">
-        <img src="/capybara_pet.png" alt="Digital Pet" id="digital-pet" onError={(e) => (e.currentTarget.style.display = 'none')} />
-        <div className="pet-dialogue">{petQuote}</div>
-      </div>
-      <div className="job-tracker">
-        <h2>Job Tracker</h2>
-        <div className="progress-bar-container">
-          <div className="progress-bar" style={{ width: `${percentage}%` }}></div>
-          <div className="progress-text">{jobData.daysWorked} / {TARGET_JOB_DAYS} Days</div>
-        </div>
-        <button 
-          className="work-btn" 
-          onClick={(e) => {
-             e.currentTarget.style.transform = 'scale(0.95)';
-             setTimeout(() => (e.target as HTMLElement).style.transform = 'scale(1)', 150);
-             toggleWork();
-          }}
-          style={{ opacity: isDoneToday ? 0.7 : 1 }}
-        >
-          {isDoneToday ? "Done for today!" : "I worked today."}
-        </button>
-      </div>
-    </>
-  );
+interface TrackerConfig {
+  id: string;
+  name: string;
+  type: 'days' | 'hours';
 }
 
-function StudyTracker() {
-  const [studyData, setStudyData] = useState<StudyData>(() => {
-    const saved = localStorage.getItem('AppleDHD_studyData');
+function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig, onUpdate: (c: TrackerConfig) => void, onDelete: () => void }) {
+  const storageKey = `AppleDHD_tracker_${config.id}`;
+  const [data, setData] = useState(() => {
+    const saved = localStorage.getItem(storageKey);
     if (saved) return JSON.parse(saved);
-    return { daysStudied: 0, hoursStudied: 0, lastStudiedDate: null, lastHoursAdded: 0, currentMonth: new Date().getMonth() };
+    // Fallback migration for old data
+    if (config.id === 'job' && localStorage.getItem('AppleDHD_jobData')) {
+      const old = JSON.parse(localStorage.getItem('AppleDHD_jobData')!);
+      return { daysCompleted: old.daysWorked || 0, hoursCompleted: 0, lastDate: old.lastWorkedDate, lastHoursAdded: 0, currentMonth: old.currentMonth };
+    }
+    if (config.id === 'study' && localStorage.getItem('AppleDHD_studyData')) {
+      const old = JSON.parse(localStorage.getItem('AppleDHD_studyData')!);
+      return { daysCompleted: old.daysStudied || 0, hoursCompleted: old.hoursStudied || 0, lastDate: old.lastStudiedDate, lastHoursAdded: old.lastHoursAdded || 0, currentMonth: old.currentMonth };
+    }
+    return { daysCompleted: 0, hoursCompleted: 0, lastDate: null, lastHoursAdded: 0, currentMonth: new Date().getMonth() };
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(config.name);
   const [selectedHours, setSelectedHours] = useState(1);
 
   useEffect(() => {
     const currentMonth = new Date().getMonth();
-    if (studyData.currentMonth !== currentMonth) {
-      const resetData = { daysStudied: 0, hoursStudied: 0, lastStudiedDate: null, lastHoursAdded: 0, currentMonth };
-      setStudyData(resetData);
-      localStorage.setItem('AppleDHD_studyData', JSON.stringify(resetData));
+    if (data.currentMonth !== currentMonth) {
+      const resetData = { daysCompleted: 0, hoursCompleted: 0, lastDate: null, lastHoursAdded: 0, currentMonth };
+      setData(resetData);
+      localStorage.setItem(storageKey, JSON.stringify(resetData));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('AppleDHD_studyData', JSON.stringify(studyData));
-  }, [studyData]);
+    localStorage.setItem(storageKey, JSON.stringify(data));
+  }, [data]);
 
   const today = new Date().toISOString().split('T')[0];
-  const isDoneToday = studyData.lastStudiedDate === today;
-  const daysInMonth = getDaysInCurrentMonth();
-  const percentage = Math.min((studyData.daysStudied / daysInMonth) * 100, 100);
+  const isDoneToday = data.lastDate === today;
+  const targetDays = config.type === 'days' ? TARGET_JOB_DAYS : getDaysInCurrentMonth();
+  const percentage = Math.min((data.daysCompleted / targetDays) * 100, 100);
 
-  const toggleStudy = () => {
-    setStudyData(prev => {
-      if (prev.lastStudiedDate !== today) {
+  const toggle = () => {
+    setData((prev: any) => {
+      if (prev.lastDate !== today) {
         return { 
           ...prev, 
-          daysStudied: prev.daysStudied + 1, 
-          hoursStudied: prev.hoursStudied + selectedHours, 
-          lastStudiedDate: today, 
-          lastHoursAdded: selectedHours 
+          daysCompleted: prev.daysCompleted + 1, 
+          hoursCompleted: prev.hoursCompleted + (config.type === 'hours' ? selectedHours : 0), 
+          lastDate: today, 
+          lastHoursAdded: config.type === 'hours' ? selectedHours : 0 
         };
       } else {
         return { 
           ...prev, 
-          daysStudied: Math.max(0, prev.daysStudied - 1), 
-          hoursStudied: Math.max(0, prev.hoursStudied - prev.lastHoursAdded), 
-          lastStudiedDate: null 
+          daysCompleted: Math.max(0, prev.daysCompleted - 1), 
+          hoursCompleted: Math.max(0, prev.hoursCompleted - prev.lastHoursAdded), 
+          lastDate: null 
         };
       }
     });
   };
 
   return (
-    <div className="job-tracker" style={{ marginTop: '24px' }}>
-      <h2>Study Tracker</h2>
+    <div className="job-tracker" style={{ marginTop: '24px', position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+        {isEditing ? (
+          <>
+            <input 
+              type="text" 
+              value={editName} 
+              onChange={e => setEditName(e.target.value)} 
+              style={{ fontSize: '20px', fontFamily: 'var(--font-sketch)', textAlign: 'center', border: '2px solid var(--border-color)', borderRadius: '4px', padding: '4px', width: '60%' }} 
+              autoFocus
+            />
+            <button onClick={() => { onUpdate({ ...config, name: editName }); setIsEditing(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Save size={18} /></button>
+            <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+          </>
+        ) : (
+          <>
+            <h2 style={{ margin: 0 }}>{config.name}</h2>
+            <button onClick={() => setIsEditing(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5 }}><Edit2 size={16} /></button>
+            {config.id !== 'job' && config.id !== 'study' && (
+              <button onClick={() => { if (window.confirm('Delete this tracker?')) onDelete(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5, color: 'red' }}><Trash2 size={16} /></button>
+            )}
+          </>
+        )}
+      </div>
+
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${percentage}%` }}></div>
-        <div className="progress-text">{studyData.daysStudied} / {daysInMonth} Days | Total: {studyData.hoursStudied} Hrs</div>
+        <div className="progress-text">
+          {data.daysCompleted} / {targetDays} Days {config.type === 'hours' && `| Total: ${data.hoursCompleted} Hrs`}
+        </div>
       </div>
+
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
-        <select 
-          style={{ padding: '10px', border: '2px solid var(--border-color)', borderRadius: '6px', fontFamily: 'var(--font-main)', fontSize: '16px', background: 'transparent', cursor: 'pointer', opacity: isDoneToday ? 0.7 : 1 }}
-          value={selectedHours} 
-          onChange={e => setSelectedHours(Number(e.target.value))}
-          disabled={isDoneToday}
-        >
-          {[1,2,3,4,5].map(h => <option key={h} value={h}>{h} Hour{h>1?'s':''}</option>)}
-        </select>
+        {config.type === 'hours' && (
+          <select 
+            style={{ padding: '10px', border: '2px solid var(--border-color)', borderRadius: '6px', fontFamily: 'var(--font-main)', fontSize: '16px', background: 'transparent', cursor: 'pointer', opacity: isDoneToday ? 0.7 : 1 }}
+            value={selectedHours} 
+            onChange={e => setSelectedHours(Number(e.target.value))}
+            disabled={isDoneToday}
+          >
+            {[1,2,3,4,5].map(h => <option key={h} value={h}>{h} Hour{h>1?'s':''}</option>)}
+          </select>
+        )}
         <button 
           className="work-btn" 
           onClick={(e) => {
              e.currentTarget.style.transform = 'scale(0.95)';
              setTimeout(() => (e.target as HTMLElement).style.transform = 'scale(1)', 150);
-             toggleStudy();
+             toggle();
           }}
           style={{ opacity: isDoneToday ? 0.7 : 1 }}
         >
-          {isDoneToday ? "Done studying!" : "I studied today."}
+          {isDoneToday ? "Done for today!" : "I did this today."}
         </button>
       </div>
     </div>
@@ -210,10 +190,53 @@ function StudyTracker() {
 }
 
 function Dashboard() {
+  const [trackers, setTrackers] = useState<TrackerConfig[]>(() => {
+    const saved = localStorage.getItem('AppleDHD_trackersConfig');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 'job', name: 'Job Tracker', type: 'days' },
+      { id: 'study', name: 'Study Tracker', type: 'hours' }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('AppleDHD_trackersConfig', JSON.stringify(trackers));
+  }, [trackers]);
+
+  const addTracker = () => {
+    const type = window.confirm('Should this tracker include Hours? (OK = Yes/Hours, Cancel = No/Days Only)') ? 'hours' : 'days';
+    const name = prompt('What do you want to call this tracker?');
+    if (name) {
+      setTrackers([...trackers, { id: Date.now().toString(), name, type }]);
+    }
+  };
+
+  const updateTracker = (updated: TrackerConfig) => {
+    setTrackers(trackers.map(t => t.id === updated.id ? updated : t));
+  };
+
+  const deleteTracker = (id: string) => {
+    setTrackers(trackers.filter(t => t.id !== id));
+  };
+
   return (
     <section className="section active" style={{ display: 'block' }}>
-      <JobTracker />
-      <StudyTracker />
+      {trackers.map((t, index) => (
+        <div key={t.id}>
+           {index === 0 && (
+              <div className="pet-widget">
+                <img src="/capybara_pet.png" alt="Digital Pet" id="digital-pet" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                <div className="pet-dialogue">"Ready to crush it today?"</div>
+              </div>
+           )}
+           <GenericTracker config={t} onUpdate={updateTracker} onDelete={() => deleteTracker(t.id)} />
+        </div>
+      ))}
+      <div style={{ textAlign: 'center', marginTop: '30px' }}>
+        <button className="btn-secondary" onClick={addTracker} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+          <Plus size={16} /> Add New Tracker
+        </button>
+      </div>
     </section>
   );
 }
