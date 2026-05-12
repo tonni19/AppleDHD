@@ -65,6 +65,8 @@ interface TrackerConfig {
   id: string;
   name: string;
   type: 'days' | 'hours';
+  targetDays?: number;
+  targetHours?: number;
 }
 
 function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig, onUpdate: (c: TrackerConfig) => void, onDelete: () => void }) {
@@ -103,7 +105,7 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
 
   const today = new Date().toISOString().split('T')[0];
   const isDoneToday = data.lastDate === today;
-  const targetDays = config.type === 'days' ? TARGET_JOB_DAYS : getDaysInCurrentMonth();
+  const targetDays = config.targetDays || (config.type === 'days' ? TARGET_JOB_DAYS : getDaysInCurrentMonth());
   const percentage = Math.min((data.daysCompleted / targetDays) * 100, 100);
 
   const toggle = () => {
@@ -156,7 +158,7 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${percentage}%` }}></div>
         <div className="progress-text">
-          {data.daysCompleted} / {targetDays} Days {config.type === 'hours' && `| Total: ${data.hoursCompleted} Hrs`}
+          {data.daysCompleted} / {targetDays} Days {config.type === 'hours' && `| Total: ${data.hoursCompleted}${config.targetHours ? ` / ${config.targetHours}` : ''} Hrs`}
         </div>
       </div>
 
@@ -200,6 +202,8 @@ function Dashboard() {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<'days'|'hours'>('days');
+  const [newTargetDays, setNewTargetDays] = useState('');
+  const [newTargetHours, setNewTargetHours] = useState('');
 
   useEffect(() => {
     localStorage.setItem('AppleDHD_trackersConfig', JSON.stringify(trackers));
@@ -207,10 +211,18 @@ function Dashboard() {
 
   const addTracker = () => {
     if (newName.trim()) {
-      setTrackers([...trackers, { id: Date.now().toString(), name: newName.trim(), type: newType }]);
+      setTrackers([...trackers, { 
+        id: Date.now().toString(), 
+        name: newName.trim(), 
+        type: newType,
+        targetDays: newTargetDays ? parseInt(newTargetDays) : undefined,
+        targetHours: newTargetHours ? parseInt(newTargetHours) : undefined
+      }]);
       setIsAdding(false);
       setNewName('');
       setNewType('days');
+      setNewTargetDays('');
+      setNewTargetHours('');
     }
   };
 
@@ -250,11 +262,27 @@ function Dashboard() {
              <select 
                value={newType} 
                onChange={e => setNewType(e.target.value as 'days'|'hours')}
-               style={{ width: '100%', marginBottom: '15px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', cursor: 'pointer', background: 'transparent' }}
+               style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', cursor: 'pointer', background: 'transparent' }}
              >
                <option value="days">Track Days Only</option>
                <option value="hours">Track Days & Hours</option>
              </select>
+             <input 
+               type="number" 
+               placeholder="Target Days/Month (e.g. 15)" 
+               value={newTargetDays} 
+               onChange={e => setNewTargetDays(e.target.value)}
+               style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', background: 'transparent' }}
+             />
+             {newType === 'hours' && (
+               <input 
+                 type="number" 
+                 placeholder="Target Hours/Month (e.g. 40)" 
+                 value={newTargetHours} 
+                 onChange={e => setNewTargetHours(e.target.value)}
+                 style={{ width: '100%', marginBottom: '15px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', background: 'transparent' }}
+               />
+             )}
              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                <button className="btn-secondary" onClick={() => setIsAdding(false)}>Cancel</button>
                <button className="work-btn" style={{ padding: '8px 16px', fontSize: '14px' }} onClick={addTracker}>Add</button>
