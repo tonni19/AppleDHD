@@ -167,9 +167,6 @@ function StudyTracker() {
 function Dashboard() {
   return (
     <section className="section active" style={{ display: 'block' }}>
-      <div className="artwork-container">
-        <img src="/artwork_placeholder.png" alt="Custom Artwork" onError={(e) => (e.currentTarget.style.display = 'none')} />
-      </div>
       <JobTracker />
       <StudyTracker />
     </section>
