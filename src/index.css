@@ -193,30 +193,7 @@ nav {
   opacity: 0.9;
 }
 
-.pet-widget {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  border: 2px dashed var(--accent-color);
-  border-radius: 10px;
-  margin-bottom: 24px;
-  background-color: #fff;
-}
 
-.pet-widget img {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 2px solid var(--border-color);
-  object-fit: cover;
-}
-
-.pet-dialogue {
-  font-family: var(--font-sketch);
-  font-size: 18px;
-  line-height: 1.2;
-}
 
 .job-tracker {
   text-align: center;

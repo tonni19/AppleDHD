@@ -88,6 +88,8 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(config.name);
+  const [editTargetDays, setEditTargetDays] = useState(config.targetDays?.toString() || '');
+  const [editTargetHours, setEditTargetHours] = useState(config.targetHours?.toString() || '');
   const [selectedHours, setSelectedHours] = useState(1);
 
   useEffect(() => {
@@ -133,17 +135,37 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
     <div className="job-tracker" style={{ marginTop: '24px', position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
         {isEditing ? (
-          <>
-            <input 
-              type="text" 
-              value={editName} 
-              onChange={e => setEditName(e.target.value)} 
-              style={{ fontSize: '20px', fontFamily: 'var(--font-sketch)', textAlign: 'center', border: '2px solid var(--border-color)', borderRadius: '4px', padding: '4px', width: '60%' }} 
-              autoFocus
-            />
-            <button onClick={() => { onUpdate({ ...config, name: editName }); setIsEditing(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Save size={18} /></button>
-            <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
-          </>
+          <div style={{ width: '100%' }}>
+            <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+              <input 
+                type="text" 
+                value={editName} 
+                onChange={e => setEditName(e.target.value)} 
+                style={{ fontSize: '18px', fontFamily: 'var(--font-sketch)', textAlign: 'center', border: '2px solid var(--border-color)', borderRadius: '4px', padding: '4px', flex: 1, background: 'transparent' }} 
+                autoFocus
+              />
+              <button onClick={() => { onUpdate({ ...config, name: editName, targetDays: editTargetDays ? parseInt(editTargetDays) : undefined, targetHours: editTargetHours ? parseInt(editTargetHours) : undefined }); setIsEditing(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Save size={18} /></button>
+              <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', gap: '5px' }}>
+               <input 
+                 type="number" 
+                 placeholder="Target Days" 
+                 value={editTargetDays} 
+                 onChange={e => setEditTargetDays(e.target.value)} 
+                 style={{ flex: 1, padding: '4px', border: '2px solid var(--border-color)', borderRadius: '4px', fontFamily: 'var(--font-main)', fontSize: '14px', background: 'transparent' }} 
+               />
+               {config.type === 'hours' && (
+                 <input 
+                   type="number" 
+                   placeholder="Target Hrs" 
+                   value={editTargetHours} 
+                   onChange={e => setEditTargetHours(e.target.value)} 
+                   style={{ flex: 1, padding: '4px', border: '2px solid var(--border-color)', borderRadius: '4px', fontFamily: 'var(--font-main)', fontSize: '14px', background: 'transparent' }} 
+                 />
+               )}
+            </div>
+          </div>
         ) : (
           <>
             <h2 style={{ margin: 0 }}>{config.name}</h2>
@@ -164,14 +186,16 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
 
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
         {config.type === 'hours' && (
-          <select 
-            style={{ padding: '10px', border: '2px solid var(--border-color)', borderRadius: '6px', fontFamily: 'var(--font-main)', fontSize: '16px', background: 'transparent', cursor: 'pointer', opacity: isDoneToday ? 0.7 : 1 }}
+          <input 
+            type="number"
+            min="0.5"
+            step="0.5"
+            placeholder="Hrs"
+            style={{ padding: '10px', width: '80px', border: '2px solid var(--border-color)', borderRadius: '6px', fontFamily: 'var(--font-main)', fontSize: '16px', background: 'transparent', opacity: isDoneToday ? 0.7 : 1 }}
             value={selectedHours} 
             onChange={e => setSelectedHours(Number(e.target.value))}
             disabled={isDoneToday}
-          >
-            {[1,2,3,4,5].map(h => <option key={h} value={h}>{h} Hour{h>1?'s':''}</option>)}
-          </select>
+          />
         )}
         <button 
           className="work-btn" 
@@ -184,6 +208,33 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
         >
           {isDoneToday ? "Done for today!" : "I did this today."}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function MiniCalendar() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const grids = [];
+  for(let i=0; i<firstDay; i++) grids.push(<div key={`empty-${i}`}></div>);
+  for(let i=1; i<=daysInMonth; i++) {
+    const active = i === d.getDate() ? 'active' : '';
+    grids.push(<div key={`day-${i}`} className={`mini-calendar-date ${active}`}>{i}</div>);
+  }
+
+  return (
+    <div className="mini-calendar" style={{ marginBottom: '20px' }}>
+      <div className="mini-calendar-header">
+        {d.toLocaleString('default', { month: 'long', year: 'numeric' })}
+      </div>
+      <div className="mini-calendar-grid">
+        {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} className="mini-calendar-day">{d}</div>)}
+        {grids}
       </div>
     </div>
   );
@@ -236,16 +287,9 @@ function Dashboard() {
 
   return (
     <section className="section active" style={{ display: 'block' }}>
-      {trackers.map((t, index) => (
-        <div key={t.id}>
-           {index === 0 && (
-              <div className="pet-widget">
-                <img src="/capybara_pet.png" alt="Digital Pet" id="digital-pet" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                <div className="pet-dialogue">"Ready to crush it today?"</div>
-              </div>
-           )}
-           <GenericTracker config={t} onUpdate={updateTracker} onDelete={() => deleteTracker(t.id)} />
-        </div>
+      <MiniCalendar />
+      {trackers.map(t => (
+        <GenericTracker key={t.id} config={t} onUpdate={updateTracker} onDelete={() => deleteTracker(t.id)} />
       ))}
       <div style={{ textAlign: 'center', marginTop: '30px' }}>
         {isAdding ? (
@@ -326,22 +370,6 @@ function Calendar() {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .filter(e => new Date(e.date) >= today);
 
-  const renderMiniCalendar = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = d.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    const grids = [];
-    for(let i=0; i<firstDay; i++) grids.push(<div key={`empty-${i}`}></div>);
-    for(let i=1; i<=daysInMonth; i++) {
-      const active = i === d.getDate() ? 'active' : '';
-      grids.push(<div key={`day-${i}`} className={`mini-calendar-date ${active}`}>{i}</div>);
-    }
-    return grids;
-  };
-
   return (
     <section className="section active" style={{ display: 'block' }}>
       <div className="calendar-header">
@@ -351,15 +379,7 @@ function Calendar() {
         </button>
       </div>
 
-      <div className="mini-calendar">
-        <div className="mini-calendar-header">
-          {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
-        </div>
-        <div className="mini-calendar-grid">
-          {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} className="mini-calendar-day">{d}</div>)}
-          {renderMiniCalendar()}
-        </div>
-      </div>
+      <MiniCalendar />
 
       <div className="event-list">
         {upcomingEvents.length === 0 ? (
