@@ -64,7 +64,7 @@ function StatusBar() {
 interface TrackerConfig {
   id: string;
   name: string;
-  type: 'days' | 'hours';
+  type: 'days' | 'hours' | 'hours_only';
   targetDays?: number;
   targetHours?: number;
 }
@@ -107,8 +107,14 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
 
   const today = new Date().toISOString().split('T')[0];
   const isDoneToday = data.lastDate === today;
-  const targetDays = config.targetDays || (config.type === 'days' ? TARGET_JOB_DAYS : getDaysInCurrentMonth());
-  const percentage = Math.min((data.daysCompleted / targetDays) * 100, 100);
+  let targetDays = config.targetDays || (config.type === 'days' ? TARGET_JOB_DAYS : getDaysInCurrentMonth());
+  let targetHours = config.targetHours || TARGET_STUDY_HOURS;
+  let percentage = 0;
+  if (config.type === 'hours_only') {
+    percentage = Math.min((data.hoursCompleted / targetHours) * 100, 100);
+  } else {
+    percentage = Math.min((data.daysCompleted / targetDays) * 100, 100);
+  }
 
   const toggle = () => {
     setData((prev: any) => {
@@ -148,14 +154,16 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
               <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
             </div>
             <div style={{ display: 'flex', gap: '5px' }}>
-               <input 
-                 type="number" 
-                 placeholder="Target Days" 
-                 value={editTargetDays} 
-                 onChange={e => setEditTargetDays(e.target.value)} 
-                 style={{ flex: 1, padding: '4px', border: '2px solid var(--border-color)', borderRadius: '4px', fontFamily: 'var(--font-main)', fontSize: '14px', background: 'transparent' }} 
-               />
-               {config.type === 'hours' && (
+               {config.type !== 'hours_only' && (
+                 <input 
+                   type="number" 
+                   placeholder="Target Days" 
+                   value={editTargetDays} 
+                   onChange={e => setEditTargetDays(e.target.value)} 
+                   style={{ flex: 1, padding: '4px', border: '2px solid var(--border-color)', borderRadius: '4px', fontFamily: 'var(--font-main)', fontSize: '14px', background: 'transparent' }} 
+                 />
+               )}
+               {(config.type === 'hours' || config.type === 'hours_only') && (
                  <input 
                    type="number" 
                    placeholder="Target Hrs" 
@@ -180,12 +188,15 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${percentage}%` }}></div>
         <div className="progress-text">
-          {data.daysCompleted} / {targetDays} Days {config.type === 'hours' && `| Total: ${data.hoursCompleted}${config.targetHours ? ` / ${config.targetHours}` : ''} Hrs`}
+          {config.type === 'hours_only' 
+            ? `${data.hoursCompleted} / ${targetHours} Hrs`
+            : `${data.daysCompleted} / ${targetDays} Days ${config.type === 'hours' ? `| Total: ${data.hoursCompleted}${config.targetHours ? ` / ${config.targetHours}` : ''} Hrs` : ''}`
+          }
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
-        {config.type === 'hours' && (
+        {(config.type === 'hours' || config.type === 'hours_only') && (
           <input 
             type="number"
             min="0.5"
@@ -252,7 +263,7 @@ function Dashboard() {
   
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newType, setNewType] = useState<'days'|'hours'>('days');
+  const [newType, setNewType] = useState<'days'|'hours'|'hours_only'>('days');
   const [newTargetDays, setNewTargetDays] = useState('');
   const [newTargetHours, setNewTargetHours] = useState('');
 
@@ -305,20 +316,23 @@ function Dashboard() {
              />
              <select 
                value={newType} 
-               onChange={e => setNewType(e.target.value as 'days'|'hours')}
+               onChange={e => setNewType(e.target.value as 'days'|'hours'|'hours_only')}
                style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', cursor: 'pointer', background: 'transparent' }}
              >
                <option value="days">Track Days Only</option>
+               <option value="hours_only">Track Hours Only</option>
                <option value="hours">Track Days & Hours</option>
              </select>
-             <input 
-               type="number" 
-               placeholder="Target Days (Optional)" 
-               value={newTargetDays} 
-               onChange={e => setNewTargetDays(e.target.value)}
-               style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', background: 'transparent' }}
-             />
-             {newType === 'hours' && (
+             {newType !== 'hours_only' && (
+               <input 
+                 type="number" 
+                 placeholder="Target Days (Optional)" 
+                 value={newTargetDays} 
+                 onChange={e => setNewTargetDays(e.target.value)}
+                 style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '6px', border: '2px solid var(--border-color)', fontFamily: 'var(--font-main)', boxSizing: 'border-box', background: 'transparent' }}
+               />
+             )}
+             {(newType === 'hours' || newType === 'hours_only') && (
                <input 
                  type="number" 
                  placeholder="Target Hours (Optional)" 
