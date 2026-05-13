@@ -47,14 +47,20 @@ function StatusBar() {
   }, []);
 
   return (
-    <div className="status-bar">
-      <div className="status-time">{time}</div>
-      <div className="status-icons">
-        <Signal size={16} />
-        <Wifi size={16} />
-        <div className="battery-container">
-          {batteryLevel !== null && <span style={{ marginRight: '4px' }}>{batteryLevel}%</span>}
-          {isCharging ? <BatteryCharging size={18} /> : <Battery size={18} />}
+    <div className="status-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px', borderBottom: '2px solid var(--border-color)', marginBottom: '10px' }}>
+      <div className="status-time" style={{ fontSize: '14px', fontWeight: 'bold' }}>{time}</div>
+      
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <img src="/rotten_to_the_core.jpg" alt="Logo" className="app-logo" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid var(--border-color)', objectFit: 'cover' }} />
+        <h1 style={{ fontFamily: 'var(--font-sketch)', fontSize: '20px', margin: 0 }}>AppleDHD</h1>
+      </div>
+
+      <div className="status-icons" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+        <Signal size={14} />
+        <Wifi size={14} />
+        <div className="battery-container" style={{ display: 'flex', alignItems: 'center' }}>
+          {batteryLevel !== null && <span style={{ fontSize: '12px', marginRight: '2px' }}>{batteryLevel}%</span>}
+          {isCharging ? <BatteryCharging size={16} /> : <Battery size={16} />}
         </div>
       </div>
     </div>
@@ -224,7 +230,7 @@ function GenericTracker({ config, onUpdate, onDelete }: { config: TrackerConfig,
   );
 }
 
-function MiniCalendar() {
+function MiniCalendar({ events, onDateClick }: { events: CalendarEvent[], onDateClick: (date: string) => void }) {
   const d = new Date();
   const year = d.getFullYear();
   const month = d.getMonth();
@@ -233,9 +239,34 @@ function MiniCalendar() {
   
   const grids = [];
   for(let i=0; i<firstDay; i++) grids.push(<div key={`empty-${i}`}></div>);
+  
   for(let i=1; i<=daysInMonth; i++) {
-    const active = i === d.getDate() ? 'active' : '';
-    grids.push(<div key={`day-${i}`} className={`mini-calendar-date ${active}`}>{i}</div>);
+    const currentDate = new Date(year, month, i);
+    // Adjust for local timezone offset when generating ISO string
+    const offset = currentDate.getTimezoneOffset() * 60000;
+    const localDate = new Date(currentDate.getTime() - offset);
+    const dateStr = localDate.toISOString().split('T')[0];
+    
+    const dayEvents = events.filter(e => e.date === dateStr);
+    const hasEvent = dayEvents.length > 0;
+    
+    const isToday = i === d.getDate();
+    const active = isToday ? 'active' : '';
+    
+    grids.push(
+      <div 
+        key={`day-${i}`} 
+        className={`mini-calendar-date ${active}`} 
+        style={{ position: 'relative', cursor: hasEvent ? 'pointer' : 'default', fontWeight: hasEvent ? 'bold' : 'normal', color: hasEvent && !isToday ? 'var(--text-color)' : '' }}
+        onClick={() => hasEvent && onDateClick(dateStr)}
+        title={hasEvent ? dayEvents.map(e => e.title).join(', ') : ''}
+      >
+        {i}
+        {hasEvent && (
+          <div style={{ position: 'absolute', bottom: '2px', left: '50%', transform: 'translateX(-50%)', width: '4px', height: '4px', backgroundColor: isToday ? 'var(--bg-color)' : 'var(--text-color)', borderRadius: '50%' }}></div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -251,7 +282,7 @@ function MiniCalendar() {
   );
 }
 
-function Dashboard() {
+function Dashboard({ events, onDateClick }: { events: CalendarEvent[], onDateClick: (date: string) => void }) {
   const [trackers, setTrackers] = useState<TrackerConfig[]>(() => {
     const saved = localStorage.getItem('AppleDHD_trackersConfig');
     if (saved) return JSON.parse(saved);
@@ -298,7 +329,7 @@ function Dashboard() {
 
   return (
     <section className="section active" style={{ display: 'block' }}>
-      <MiniCalendar />
+      <MiniCalendar events={events} onDateClick={onDateClick} />
       {trackers.map(t => (
         <GenericTracker key={t.id} config={t} onUpdate={updateTracker} onDelete={() => deleteTracker(t.id)} />
       ))}
@@ -356,19 +387,11 @@ function Dashboard() {
   );
 }
 
-function Calendar() {
-  const [events, setEvents] = useState<CalendarEvent[]>(() => {
-    const saved = localStorage.getItem('AppleDHD_events');
-    return saved ? JSON.parse(saved) : [];
-  });
+function Calendar({ events, setEvents, onDateClick }: { events: CalendarEvent[], setEvents: (events: CalendarEvent[]) => void, onDateClick: (date: string) => void }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newType, setNewType] = useState('Class Test');
   const [newDate, setNewDate] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem('AppleDHD_events', JSON.stringify(events));
-  }, [events]);
 
   const saveEvent = () => {
     if (!newTitle || !newDate) { alert("Please fill out what and when."); return; }
@@ -393,7 +416,7 @@ function Calendar() {
         </button>
       </div>
 
-      <MiniCalendar />
+      <MiniCalendar events={events} onDateClick={onDateClick} />
 
       <div className="event-list">
         {upcomingEvents.length === 0 ? (
@@ -512,6 +535,14 @@ function AiAssistant() {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'ai'>('dashboard');
+  const [events, setEvents] = useState<CalendarEvent[]>(() => {
+    const saved = localStorage.getItem('AppleDHD_events');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('AppleDHD_events', JSON.stringify(events));
+  }, [events]);
 
   return (
     <div className="app-container">
@@ -522,8 +553,8 @@ export default function App() {
       </header>
 
       <main id="main-content">
-        {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'calendar' && <Calendar />}
+        {activeTab === 'dashboard' && <Dashboard events={events} onDateClick={() => setActiveTab('calendar')} />}
+        {activeTab === 'calendar' && <Calendar events={events} setEvents={setEvents} onDateClick={() => setActiveTab('calendar')} />}
         {activeTab === 'ai' && <AiAssistant />}
       </main>
 
