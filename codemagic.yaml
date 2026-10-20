@@ -1,0 +1,44 @@
+workflows:
+  ios-unsigned:
+    name: iOS – unsigned build for sideloading
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+      xcode: latest
+      vars:
+        # No signing here on purpose: AltStore/SideStore re-signs the app on
+        # install using a free Apple ID, so Codemagic never needs a paid
+        # Apple Developer account or any certificate/profile at all.
+        ARCHIVE_PATH: build/App.xcarchive
+    scripts:
+      - name: Install JS dependencies
+        script: npm ci
+
+      - name: Build the web app (next export)
+        script: npm run build
+
+      - name: Sync the Capacitor iOS project
+        script: npx cap sync ios
+
+      - name: Archive, unsigned
+        script: |
+          set -e
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath "$ARCHIVE_PATH" \
+            CODE_SIGNING_ALLOWED=NO \
+            clean archive
+
+      - name: Package as an unsigned .ipa
+        script: |
+          set -e
+          cd "$(dirname "$ARCHIVE_PATH")"
+          mkdir -p Payload
+          cp -r App.xcarchive/Products/Applications/App.app Payload/
+          zip -r appledhd-unsigned.ipa Payload
+    artifacts:
+      - build/appledhd-unsigned.ipa

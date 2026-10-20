@@ -1,0 +1,225 @@
+@import "tailwindcss";
+
+:root {
+  /* Ink and paper ------------------------------------------------------- */
+  --ink: #6b3226;
+  --ink-soft: rgba(107, 50, 38, 0.45);
+  --paper: #fffdfa;
+
+  /* Safe areas. The packaged app draws under the status bar and home
+     indicator, so every fixed edge has to respect these or it collides with
+     the notch. On the web they resolve to 0. ---------------------------- */
+  --sa-top: env(safe-area-inset-top, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left: env(safe-area-inset-left, 0px);
+  --sa-right: env(safe-area-inset-right, 0px);
+
+  /* Chrome metrics shared by screens so content never hides behind them. */
+  --header-h: 60px;
+  --tabbar-h: 76px;
+  --tabbar-gap: 14px;
+  --content-bottom: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sa-bottom) + 22px);
+}
+
+html {
+  height: 100%;
+  /* Keep the webview from rubber-banding the whole document behind the app. */
+  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: #2a1712;
+  color: #4a251f;
+  overscroll-behavior: none;
+  /* A planner is tapped, not selected — stray selections look broken natively. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Text the user is meant to read, copy or edit opts selection back in. */
+input,
+textarea,
+[data-selectable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  /* The design supplies its own borders; normalise the UA defaults away. */
+  background: none;
+  border: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+input,
+textarea {
+  font: inherit;
+  /* iOS zooms the page when a focused field is under 16px. */
+  font-size: max(16px, 1em);
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Visible focus for keyboard and switch-control users, suppressed for pointers. */
+:focus-visible {
+  outline: 3px solid #2f6fd0;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.ap-scroll,
+.no-scrollbar {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.ap-scroll::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Animations ----------------------------------------------------------- */
+
+@keyframes apRise {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes apFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* A drawing arriving: fades in while rising a touch and settling to size. Plays once. */
+@keyframes apSettle {
+  from { opacity: 0; transform: translateY(8px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes apToastIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Streak counter. Plays once, only when the streak grows, and never loops.
+
+   Every keyframe below begins and ends exactly at the element's resting state, so
+   nothing snaps when an animation finishes. There is no overshoot either: the
+   motion eases in, settles, and stops. */
+
+/* The flame swells gently and sways, each swing smaller than the last, until
+   it comes to rest upright. */
+@keyframes apIgnite {
+  0% { transform: rotate(0deg) scale(1); }
+  22% { transform: rotate(3deg) scale(1.08); }
+  44% { transform: rotate(-2deg) scale(1.05); }
+  64% { transform: rotate(1deg) scale(1.025); }
+  82% { transform: rotate(-.35deg) scale(1.008); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+/* A warm light behind the flame that rises and fades away. */
+@keyframes apGlow {
+  0% { opacity: 0; transform: scale(0.7); }
+  35% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.18); }
+}
+
+/* The new number rolls up into the label, like a counter ticking over. */
+@keyframes apTick {
+  0% { opacity: 0; transform: translateY(95%); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* The bubble drifts in, rests, and drifts out. Opacity and a few pixels only. */
+@keyframes apNote {
+  0% { opacity: 0; transform: translate(-50%, -5px); }
+  14% { opacity: 1; transform: translate(-50%, 0); }
+  80% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -3px); }
+}
+
+/*
+ * The transparency slider. A bare <input type="range"> was nearly invisible: the
+ * browser's default track is thin and pale, and blended into the near-white
+ * settings panel behind it — only the accent-coloured thumb read at all. This
+ * draws a track and thumb explicitly, filled up to the thumb via a gradient
+ * driven by the --pct custom property the component sets inline.
+ */
+input[type='range'].ap-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 30px;
+  background: transparent;
+  margin: 0;
+}
+
+input[type='range'].ap-slider::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 6px;
+  border: 2.5px solid var(--ink);
+  background: linear-gradient(to right, #e0503a var(--pct, 0%), #f1e2d8 var(--pct, 0%));
+}
+
+input[type='range'].ap-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: #e0503a;
+  border: 3px solid var(--ink);
+  box-shadow: 2px 3px 0 rgba(80, 26, 18, 0.4);
+  cursor: pointer;
+}
+
+input[type='range'].ap-slider::-moz-range-track {
+  height: 10px;
+  border-radius: 6px;
+  border: 2.5px solid var(--ink);
+  background: #f1e2d8;
+}
+
+input[type='range'].ap-slider::-moz-range-progress {
+  height: 10px;
+  border-radius: 6px;
+  background: #e0503a;
+}
+
+input[type='range'].ap-slider::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e0503a;
+  border: 3px solid var(--ink);
+  box-shadow: 2px 3px 0 rgba(80, 26, 18, 0.4);
+  cursor: pointer;
+}
+
+/* Honour the OS setting for whatever motion remains. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

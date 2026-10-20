@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">appledhd</string>
+    <string name="title_activity_main">appledhd</string>
+    <string name="package_name">com.appledhd.planner</string>
+    <string name="custom_url_scheme">com.appledhd.planner</string>
+</resources>

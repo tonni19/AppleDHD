@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The artwork's peach wall, matched by the launch screen and the web view behind the app. -->
+    <color name="splash_background">#F8A988</color>
+</resources>
